@@ -21,6 +21,8 @@ async function getOwnerId() {
       }
     );
     
+    console.log('Owners response:', JSON.stringify(response.data, null, 2));
+    
     if (response.data && response.data.length > 0) {
       const ownerId = response.data[0].id;
       console.log(`Found owner ID: ${ownerId}`);
@@ -47,16 +49,20 @@ async function deployToRender() {
     const renderConfig = yaml.load(fs.readFileSync(renderYamlPath, 'utf8'));
     
     // Create a new deploy
+    const payload = {
+      name: 'professor-ai',
+      ownerId: ownerId, // Make sure this is included
+      repo: 'https://github.com/krishankshh/professor-ai',
+      branch: 'main',
+      autoDeploy: 'yes',
+      serviceDetails: renderConfig
+    };
+    
+    console.log('Deployment payload:', JSON.stringify(payload, null, 2));
+    
     const response = await axios.post(
       'https://api.render.com/v1/services',
-      {
-        name: 'professor-ai',
-        ownerId: ownerId,
-        repo: 'https://github.com/krishankshh/professor-ai',
-        branch: 'main',
-        autoDeploy: 'yes',
-        serviceDetails: renderConfig
-      },
+      payload,
       {
         headers: {
           'Authorization': `Bearer ${RENDER_API_KEY}`,
