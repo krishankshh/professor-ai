@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: professor-ai-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=professor-ai
+      - MONGO_INITDB_ROOT_USERNAME=professor-ai-user
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+    restart: always
+
+  backend:
+    build: ./backend
+    container_name: professor-ai-backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://professor-ai-user:password123@mongodb:27017/professor-ai
+      - JWT_SECRET=professor_ai_jwt_secret_8e51b073
+      - NODE_ENV=production
+      - LLM_API_URL=https://api.together.xyz
+      - LLM_MODEL=togethercomputer/llama-3-8b-instruct
+    restart: always
+
+  frontend:
+    build: ./frontend
+    container_name: professor-ai-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5000/api
+    restart: always
+
+volumes:
+  mongodb_data:
