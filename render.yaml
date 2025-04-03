@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: professor-ai-backend
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        value: mongodb+srv://professor-ai:${MONGODB_PASSWORD}@cluster0.mongodb.net/professor-ai?retryWrites=true&w=majority
+      - key: JWT_SECRET
+        value: ${JWT_SECRET}
+      - key: NODE_ENV
+        value: production
+      - key: LLM_API_URL
+        value: https://api.together.xyz
+      - key: LLM_API_KEY
+        fromGroup: llm-credentials
+      - key: LLM_MODEL
+        value: togethercomputer/llama-3-8b-instruct
+  
+  - type: web
+    name: professor-ai-frontend
+    env: node
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://professor-ai-backend.onrender.com/api
