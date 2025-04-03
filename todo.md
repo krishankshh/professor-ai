@@ -31,11 +31,11 @@
 - [x] Implement real-time communication with backend
 
 ## 5. Create Database Schema
-- [ ] Design user profile schema
-- [ ] Create learning history tracking
-- [ ] Implement syllabus storage
-- [ ] Set up quiz and assessment storage
-- [ ] Create schema for personalization data
+- [x] Design user profile schema
+- [x] Create learning history tracking
+- [x] Implement syllabus storage
+- [x] Set up quiz and assessment storage
+- [x] Create schema for personalization data
 
 ## 6. Implement RAG and Personalization Features
 - [ ] Set up Retrieval-Augmented Generation
