@@ -4,8 +4,8 @@ const auth = require('../middleware/auth');
 const LearningSession = require('../models/LearningSession');
 const User = require('../models/User');
 
-// LLM integration will be implemented here
-const { generateAIResponse } = require('../utils/llmService');
+// Enhanced LLM integration
+const { generateLLMResponse } = require('../utils/enhancedLlmService');
 
 // @route   POST api/tutoring/session
 // @desc    Start a new tutoring session
@@ -57,19 +57,20 @@ router.post('/session/:id/message', auth, async (req, res) => {
     // Get user data for personalization
     const user = await User.findById(req.user.id);
 
-    // Generate AI response using LLM
-    const aiResponse = await generateAIResponse(message, {
-      sessionHistory: session.interactions,
-      userBackground: user.academicBackground,
+    // Generate AI response using enhanced LLM service
+    const llmResult = await generateLLMResponse(message, {
+      userId: req.user.id,
+      sessionId: session._id,
       topic: session.topic,
-      learningPreferences: user.learningPreferences
+      useRag: true
     });
 
     // Add interaction to session
     session.interactions.push({
       question: message,
-      answer: aiResponse,
-      timestamp: Date.now()
+      answer: llmResult.response,
+      timestamp: Date.now(),
+      relevantDocuments: llmResult.documents.map(doc => doc._id)
     });
 
     // Update session progress (simplified for now)
@@ -79,12 +80,34 @@ router.post('/session/:id/message', auth, async (req, res) => {
     await session.save();
 
     res.json({ 
-      message: aiResponse,
+      message: llmResult.response,
       sessionId: session._id,
-      progress: session.progress
+      progress: session.progress,
+      relevantDocuments: llmResult.documents
     });
   } catch (err) {
     console.error('Error processing message:', err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   POST api/tutoring/chat
+// @desc    Simple chat endpoint without session (for testing)
+// @access  Public
+router.post('/chat', async (req, res) => {
+  try {
+    const { message } = req.body;
+    
+    // Generate AI response using enhanced LLM service
+    const llmResult = await generateLLMResponse(message, {
+      useRag: false
+    });
+
+    res.json({ 
+      response: llmResult.response
+    });
+  } catch (err) {
+    console.error('Error processing chat message:', err.message);
     res.status(500).send('Server error');
   }
 });

@@ -2,16 +2,18 @@ const axios = require('axios');
 
 /**
  * LLM Service for Professor AI
- * This service integrates with an open-source LLM to provide AI tutoring capabilities
- * Currently using a local Ollama instance with Llama 3 model
+ * This service integrates with Together.ai API to provide AI tutoring capabilities
+ * Using Llama 3 model for high-quality responses
  */
 
 // Configuration for LLM
 const LLM_CONFIG = {
-  // Base URL for Ollama API (will be configurable via environment variables)
-  baseUrl: process.env.LLM_API_URL || 'http://localhost:11434',
+  // Base URL for Together.ai API (configured via environment variables)
+  baseUrl: process.env.LLM_API_URL || 'https://api.together.xyz',
   // Default model to use
-  model: process.env.LLM_MODEL || 'llama3',
+  model: process.env.LLM_MODEL || 'togethercomputer/llama-3-8b-instruct',
+  // API Key
+  apiKey: process.env.RENDER_API_KEY,
   // Default parameters
   defaultParams: {
     temperature: 0.7,
@@ -124,15 +126,21 @@ const createPersonalizedSystemPrompt = (userBackground, topic, learningPreferenc
  */
 const callLLMAPI = async (messages) => {
   try {
-    // For local Ollama instance
-    const response = await axios.post(`${LLM_CONFIG.baseUrl}/api/chat`, {
+    // For Together.ai API
+    const response = await axios.post(`${LLM_CONFIG.baseUrl}/v1/chat/completions`, {
       model: LLM_CONFIG.model,
       messages,
-      stream: false,
-      ...LLM_CONFIG.defaultParams
+      temperature: LLM_CONFIG.defaultParams.temperature,
+      top_p: LLM_CONFIG.defaultParams.top_p,
+      max_tokens: LLM_CONFIG.defaultParams.max_tokens
+    }, {
+      headers: {
+        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`,
+        'Content-Type': 'application/json'
+      }
     });
     
-    return response.data.message.content;
+    return response.data.choices[0].message.content;
   } catch (error) {
     console.error('Error calling LLM API:', error);
     throw error;
@@ -146,9 +154,13 @@ const callLLMAPI = async (messages) => {
 const initLLMService = async () => {
   try {
     console.log(`Initializing LLM service with model: ${LLM_CONFIG.model}`);
-    // Check if the LLM API is available
-    await axios.get(`${LLM_CONFIG.baseUrl}/api/version`);
-    console.log('LLM API is available');
+    // Check if the LLM API is available and API key is valid
+    await axios.get(`${LLM_CONFIG.baseUrl}/v1/models`, {
+      headers: {
+        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
+      }
+    });
+    console.log('LLM API is available and API key is valid');
     return true;
   } catch (error) {
     console.error('Error initializing LLM service:', error);

@@ -37,11 +37,6 @@ export const TutoringProvider = ({ children }) => {
 
   // Send a message in the current session
   const sendMessage = async (message) => {
-    if (!currentSession) {
-      setError('No active session');
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
@@ -56,14 +51,21 @@ export const TutoringProvider = ({ children }) => {
       
       setMessages((prev) => [...prev, userMessage]);
       
-      // Get AI response
-      const response = await tutoringService.sendMessage(currentSession.id, message);
+      let response;
+      
+      // If there's an active session, use session-based chat
+      if (currentSession) {
+        response = await tutoringService.sendMessage(currentSession.id, message);
+      } else {
+        // Otherwise use the simple chat endpoint
+        response = await tutoringService.sendChatMessage(message);
+      }
       
       // Add AI response to the list
       const aiMessage = {
         id: `ai-${Date.now()}`,
         sender: 'ai',
-        content: response.message,
+        content: response.message || response.response, // Handle both response formats
         timestamp: new Date(),
       };
       
@@ -113,6 +115,19 @@ export const TutoringProvider = ({ children }) => {
     }
   };
 
+  // Start a simple chat without session (for testing)
+  const startSimpleChat = () => {
+    setCurrentSession(null);
+    setMessages([
+      {
+        id: 'welcome',
+        sender: 'ai',
+        content: `Hello! I'm Professor AI, your personal AI tutor. How can I help you today?`,
+        timestamp: new Date(),
+      },
+    ]);
+  };
+
   // Context value
   const value = {
     currentSession,
@@ -123,6 +138,7 @@ export const TutoringProvider = ({ children }) => {
     sendMessage,
     endSession,
     getPreviousSessions,
+    startSimpleChat,
   };
 
   return <TutoringContext.Provider value={value}>{children}</TutoringContext.Provider>;

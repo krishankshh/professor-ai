@@ -61,6 +61,11 @@ export const tutoringService = {
     const response = await api.get('/tutoring/sessions');
     return response.data;
   },
+  // New method for simple chat without session (for testing)
+  sendChatMessage: async (message) => {
+    const response = await api.post('/tutoring/chat', { message });
+    return response.data;
+  }
 };
 
 // Syllabus services

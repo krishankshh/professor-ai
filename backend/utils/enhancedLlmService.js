@@ -5,15 +5,17 @@ const LearningSession = require('../models/LearningSession');
 
 /**
  * Enhanced LLM Service for Professor AI
- * This service integrates open-source LLMs with RAG and personalization
+ * This service integrates Together.ai API with RAG and personalization
  */
 
 // Configuration for LLM
 const LLM_CONFIG = {
-  // Base URL for LLM API (will be configurable via environment variables)
-  baseUrl: process.env.LLM_API_URL || 'http://localhost:11434',
+  // Base URL for Together.ai API (configured via environment variables)
+  baseUrl: process.env.LLM_API_URL || 'https://api.together.xyz',
   // Default model to use
-  model: process.env.LLM_MODEL || 'llama3',
+  model: process.env.LLM_MODEL || 'togethercomputer/llama-3-8b-instruct',
+  // API Key
+  apiKey: process.env.RENDER_API_KEY,
   // Default system prompt
   defaultSystemPrompt: `
     You are Professor AI, a personalized AI tutor.
@@ -35,9 +37,14 @@ const LLM_CONFIG = {
  */
 const initLLMService = async () => {
   try {
-    console.log('Initializing enhanced LLM service');
-    // Check if LLM API is available
-    const response = await axios.get(`${LLM_CONFIG.baseUrl}/api/health`);
+    console.log('Initializing enhanced LLM service with Together.ai');
+    // Check if LLM API is available and API key is valid
+    const response = await axios.get(`${LLM_CONFIG.baseUrl}/v1/models`, {
+      headers: {
+        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
+      }
+    });
+    console.log('Together.ai API is available and API key is valid');
     return response.status === 200;
   } catch (error) {
     console.error('Error initializing LLM service:', error);
@@ -85,8 +92,8 @@ const generateLLMResponse = async (prompt, options = {}) => {
       personalizedSystemPrompt = await generatePersonalizedSystemPrompt(userId, topic);
     }
     
-    // Call the LLM API
-    const response = await axios.post(`${LLM_CONFIG.baseUrl}/api/chat`, {
+    // Call the Together.ai API
+    const response = await axios.post(`${LLM_CONFIG.baseUrl}/v1/chat/completions`, {
       model: LLM_CONFIG.model,
       messages: [
         {
@@ -100,6 +107,11 @@ const generateLLMResponse = async (prompt, options = {}) => {
       ],
       temperature,
       max_tokens: maxTokens
+    }, {
+      headers: {
+        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`,
+        'Content-Type': 'application/json'
+      }
     });
     
     // Extract the response content
